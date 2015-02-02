@@ -14,6 +14,19 @@ namespace App\Vendor\Module
             return 'Module';
         }
 
+        public function getRoute()
+        {
+            return 'module';
+        }
+
+        public function getInternalRoute()
+        {
+            return array(
+                'default_controller'    => 'welcome',
+                '404_override'          => '',
+                'translate_uri_dashes'  => FALSE
+            );
+        }
     }
 
 }

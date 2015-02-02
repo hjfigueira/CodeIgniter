@@ -78,14 +78,17 @@ switch (ENVIRONMENT)
 	// The name of THIS file
 	define('SELF', pathinfo(__FILE__, PATHINFO_BASENAME));
 
-	// Path to the system folder
-	//define('BASEPATH', str_replace('\\', '/', $system_path));
+	// Path to base directory
+	define('BASEPATH', str_replace('\\', '/', realpath(pathinfo(__FILE__, PATHINFO_DIRNAME) . '/..' )));
+
+	// Path to the public folder
+	define('PUBLIC', str_replace('\\', '/', pathinfo(__FILE__, PATHINFO_DIRNAME) ));
+
+	// Path to the system path
+	define('SYSDIR', trim(strrchr(trim(BASEPATH, '/'), '/'), '/'));
 
 	// Path to the front controller (this file)
 	define('FCPATH', str_replace(SELF, '', __FILE__));
-
-	// Name of the "system folder"
-	//define('SYSDIR', trim(strrchr(trim(BASEPATH, '/'), '/'), '/'));
 
 
 /*

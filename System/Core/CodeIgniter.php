@@ -6,12 +6,11 @@ namespace System\Core
 	{
 		public function __construct($modules)
 		{
-			die('Carragamento bem sucedido em '.__CLASS__.'.php');
 
 			foreach($modules as $module)
 			{
-				$module->registerRoutes();
-				$module->registerConfigs();
+				//$module->registerRoutes();
+				//$module->registerConfigs();
 
 			}
 
@@ -70,10 +69,9 @@ namespace System\Core
              *  Define a custom error handler so we can log PHP errors
              * ------------------------------------------------------
              */
-			//@todo
-			set_error_handler('_error_handler');
-			set_exception_handler('_exception_handler');
-			register_shutdown_function('_shutdown_handler');
+			set_error_handler('\\System\\Core\\Common::_error_handler');
+			set_exception_handler('\\System\\Core\\Common::_exception_handler');
+			register_shutdown_function('\\System\\Core\\Common::_shutdown_handler');
 
 
 			/*
@@ -82,15 +80,15 @@ namespace System\Core
              * ------------------------------------------------------
              */
 			file_exists('../../vendor/autoload.php')
-				? require_once(APPPATH.'vendor/autoload.php')
-				: log_message('error', '$config[\'composer_autoload\'] is set to TRUE but '.APPPATH.'vendor/autoload.php was not found.');
+				? require_once('../../vendor/autoload.php')
+				: Common::log_message('error', 'vendor/autoload.php was not found.');
 
 			/*
              * ------------------------------------------------------
              *  Start the timer... tick tock tick tock...
              * ------------------------------------------------------
              */
-			$BM =& load_class('Benchmark', 'core');
+			$BM = new Benchmark();
 			$BM->mark('total_execution_time_start');
 			$BM->mark('loading_time:_base_classes_start');
 
@@ -105,7 +103,7 @@ namespace System\Core
              * depending on another class that uses it.
              *
              */
-			$CFG =& load_class('Config', 'core');
+			$CFG = new Config();
 
 			// Do we have any manually set config items in the index.php file?
 			if (isset($assign_to_config) && is_array($assign_to_config))
@@ -130,7 +128,7 @@ namespace System\Core
              * in it's constructor, but it's _not_ class-specific.
              *
              */
-			$charset = strtoupper(config_item('charset'));
+			$charset = strtoupper(Common::config_item('charset'));
 			ini_set('default_charset', $charset);
 
 			if (extension_loaded('mbstring'))
@@ -162,7 +160,7 @@ namespace System\Core
 				define('ICONV_ENABLED', FALSE);
 			}
 
-			if (is_php('5.6'))
+			if (Common::is_php('5.6'))
 			{
 				ini_set('php.internal_encoding', $charset);
 			}
@@ -172,6 +170,8 @@ namespace System\Core
              *  Load compatibility features
              * ------------------------------------------------------
              */
+
+			die('Carragamento bem sucedido em '.__CLASS__.'.php - line : '.__LINE__);
 
 			require_once(BASEPATH.'core/compat/mbstring.php');
 			require_once(BASEPATH.'core/compat/hash.php');

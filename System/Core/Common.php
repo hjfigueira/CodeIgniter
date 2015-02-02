@@ -82,7 +82,7 @@ namespace System\Core
 
 			if (empty($config))
 			{
-				$file_path = APPPATH.'config/config.php';
+				$file_path = BASEPATH.'/App/Config/config.php';
 				$found = FALSE;
 				if (file_exists($file_path))
 				{
@@ -91,13 +91,13 @@ namespace System\Core
 				}
 
 				// Is the config file in the environment folder?
-				if (file_exists($file_path = APPPATH.'config/'.ENVIRONMENT.'/config.php'))
+				if (file_exists($file_path = BASEPATH.'/App/Config/'.ENVIRONMENT.'/config.php'))
 				{
 					require($file_path);
 				}
 				elseif ( ! $found)
 				{
-					set_status_header(503);
+					Common::set_status_header(503);
 					echo 'The configuration file does not exist.';
 					exit(3); // EXIT_CONFIG
 				}
@@ -105,7 +105,7 @@ namespace System\Core
 				// Does the $config array exist in the file?
 				if ( ! isset($config) OR ! is_array($config))
 				{
-					set_status_header(503);
+					Common::set_status_header(503);
 					echo 'Your config file does not appear to be formatted correctly.';
 					exit(3); // EXIT_CONFIG
 				}
@@ -133,7 +133,7 @@ namespace System\Core
 			if (empty($_config))
 			{
 				// references cannot be directly assigned to static variables, so we use an array
-				$_config[0] =& get_config();
+				$_config[0] =& Common::get_config();
 			}
 
 			return isset($_config[0][$item]) ? $_config[0][$item] : NULL;
@@ -150,13 +150,13 @@ namespace System\Core
 
 			if (empty($_mimes))
 			{
-				if (file_exists(APPPATH.'config/'.ENVIRONMENT.'/mimes.php'))
+				if (file_exists(BASEPATH.'/App/Config/config/'.ENVIRONMENT.'/mimes.php'))
 				{
-					$_mimes = include(APPPATH.'config/'.ENVIRONMENT.'/mimes.php');
+					$_mimes = include(BASEPATH.'/App/Config/config/'.ENVIRONMENT.'/mimes.php');
 				}
-				elseif (file_exists(APPPATH.'config/mimes.php'))
+				elseif (file_exists(BASEPATH.'/App/Config/config/mimes.php'))
 				{
-					$_mimes = include(APPPATH.'config/mimes.php');
+					$_mimes = include(BASEPATH.'/App/Config/config/mimes.php');
 				}
 				else
 				{
@@ -201,7 +201,7 @@ namespace System\Core
 		 *
 		 * @return 	bool
 		 */
-		function is_cli()
+		static function is_cli()
 		{
 			return (PHP_SAPI === 'cli' OR defined('STDIN'));
 		}
@@ -278,7 +278,7 @@ namespace System\Core
 			if ($_log === NULL)
 			{
 				// references cannot be directly assigned to static variables, so we use an array
-				$_log[0] =& load_class('Log', 'core');
+				$_log[0] = new Log();
 			}
 
 			$_log[0]->write_log($level, $message);
@@ -388,7 +388,8 @@ namespace System\Core
 		static function _error_handler($severity, $message, $filepath, $line)
 		{
 			$is_error = (((E_ERROR | E_COMPILE_ERROR | E_CORE_ERROR | E_USER_ERROR) & $severity) === $severity);
-
+			//todo
+			//exit(1);
 			// When an error occurred, set the status header to '500 Internal Server Error'
 			// to indicate to the client something went wrong.
 			// This can't be done within the $_error->show_php_error method because
@@ -397,7 +398,7 @@ namespace System\Core
 			// they are above the error_reporting threshold.
 			if ($is_error)
 			{
-				set_status_header(500);
+				Common::set_status_header(500);
 			}
 
 			// Should we ignore the error? We'll get the current error_reporting
@@ -407,13 +408,15 @@ namespace System\Core
 				return;
 			}
 
-			$_error =& load_class('Exceptions', 'core');
-			$_error->log_exception($severity, $message, $filepath, $line);
+			$_error = new Exceptions();
+			//TODO
+			//$_error->log_exception($severity, $message, $filepath, $line);
 
 			// Should we display the error?
 			if (str_ireplace(array('off', 'none', 'no', 'false', 'null'), '', ini_get('display_errors')))
 			{
-				$_error->show_php_error($severity, $message, $filepath, $line);
+				//TODO
+				//$_error->show_php_error($severity, $message, $filepath, $line);
 			}
 
 			// If the error is fatal, the execution of the script should be stopped because
@@ -468,7 +471,7 @@ namespace System\Core
 			if (isset($last_error) &&
 				($last_error['type'] & (E_ERROR | E_PARSE | E_CORE_ERROR | E_CORE_WARNING | E_COMPILE_ERROR | E_COMPILE_WARNING)))
 			{
-				_error_handler($last_error['type'], $last_error['message'], $last_error['file'], $last_error['line']);
+				Common::_error_handler($last_error['type'], $last_error['message'], $last_error['file'], $last_error['line']);
 			}
 		}
 
