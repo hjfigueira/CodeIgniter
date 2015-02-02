@@ -2,12 +2,10 @@
 
 namespace App\Vendor\Module
 {
-    //@todo
-    // use System/Core/StandardModule();
-    // use System/Core/Intefaces/ModuleInit();
 
-    //class Init extends StandardModule implements SystemInit
-    class Module
+    use System\Core\Interfaces\StandardModule;
+
+    class Module implements StandardModule
     {
         public function getName()
         {

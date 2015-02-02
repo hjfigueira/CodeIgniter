@@ -171,34 +171,33 @@ namespace System\Core
              * ------------------------------------------------------
              */
 
-			die('Carragamento bem sucedido em '.__CLASS__.'.php - line : '.__LINE__);
-
-			require_once(BASEPATH.'core/compat/mbstring.php');
-			require_once(BASEPATH.'core/compat/hash.php');
-			require_once(BASEPATH.'core/compat/password.php');
-			require_once(BASEPATH.'core/compat/standard.php');
+			//require_once(BASEPATH.'core/compat/mbstring.php');
+			//require_once(BASEPATH.'core/compat/hash.php');
+			//require_once(BASEPATH.'core/compat/password.php');
+			//require_once(BASEPATH.'core/compat/standard.php');
 
 			/*
              * ------------------------------------------------------
              *  Instantiate the UTF-8 class
              * ------------------------------------------------------
              */
-			$UNI =& load_class('Utf8', 'core');
+			$UNI  = new Utf8();
 
 			/*
              * ------------------------------------------------------
              *  Instantiate the URI class
              * ------------------------------------------------------
              */
-			$URI =& load_class('URI', 'core');
+			$URI = new Uri();
 
 			/*
              * ------------------------------------------------------
              *  Instantiate the routing class and set the routing
              * ------------------------------------------------------
              */
-			$RTR =& load_class('Router', 'core', isset($routing) ? $routing : NULL);
+			$RTR = new Router();
 
+			die('Carregamento bem sucedido em '.__CLASS__.'.php - line : '.__LINE__);
 			/*
              * ------------------------------------------------------
              *  Instantiate the output class
