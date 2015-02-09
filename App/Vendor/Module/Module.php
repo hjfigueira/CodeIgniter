@@ -2,7 +2,6 @@
 
 namespace App\Vendor\Module
 {
-
     use System\Core\Interfaces\StandardModule;
 
     class Module implements StandardModule
@@ -20,9 +19,8 @@ namespace App\Vendor\Module
         public function getInternalRoute()
         {
             return array(
-                'default_controller'    => 'welcome',
-                '404_override'          => '',
-                'translate_uri_dashes'  => FALSE
+                'index'             => 'Vendor/Module/Welcome/home',
+                'index/(:any)'      => 'Vendor/Module/Welcome/home/$1'
             );
         }
     }

@@ -2,6 +2,8 @@
 
 namespace System\Core
 {
+	use System\Core\Interfaces\StandardModule;
+
 	/**
 	 * Router Class
 	 *
@@ -35,6 +37,20 @@ namespace System\Core
 		 * @var	string
 		 */
 		public $class =		'';
+
+		/**
+		 * Current module
+		 *
+		 * @var string
+		 */
+		public $module = '';
+
+		/**
+		 * Current module
+		 *
+		 * @var string
+		 */
+		public $vendor = '';
 
 		/**
 		 * Current method name
@@ -85,32 +101,13 @@ namespace System\Core
 		 *
 		 * @return	void
 		 */
-		public function __construct(Module)
+		public function __construct(array $modules)
 		{
 			$this->config = new Config();
 			$this->uri =  new Uri();
 
 			$this->enable_query_strings = ( ! Common::is_cli() && $this->config->item('enable_query_strings') === TRUE);
-			$this->_set_routing();
-
-			// Set any routing overrides that may exist in the main index file
-			if (is_array($routing))
-			{
-				if (isset($routing['directory']))
-				{
-					$this->set_directory($routing['directory']);
-				}
-
-				if ( ! empty($routing['controller']))
-				{
-					$this->set_class($routing['controller']);
-				}
-
-				if ( ! empty($routing['function']))
-				{
-					$this->set_method($routing['function']);
-				}
-			}
+			$this->_set_routing($modules);
 
 			Common::log_message('info', 'Router Class Initialized');
 		}
@@ -124,69 +121,72 @@ namespace System\Core
 		 * as well as any "routes" that have been set in the routing config file.
 		 *
 		 * @return	void
+		 * @param $modules array<StandardModule>
 		 */
-		protected function _set_routing()
+		protected function _set_routing(array $modules)
 		{
 			// Are query strings enabled in the config file? Normally CI doesn't utilize query strings
 			// since URI segments are more search-engine friendly, but they can optionally be used.
 			// If this feature is enabled, we will gather the directory/class/method a little differently
-			if ($this->enable_query_strings)
+			//TODO
+//			if ($this->enable_query_strings)
+//			{
+//				$_d = $this->config->item('directory_trigger');
+//				$_d = isset($_GET[$_d]) ? trim($_GET[$_d], " \t\n\r\0\x0B/") : '';
+//				if ($_d !== '')
+//				{
+//					$this->uri->filter_uri($_d);
+//					$this->set_directory($_d);
+//				}
+//
+//				$_c = trim($this->config->item('controller_trigger'));
+//				if ( ! empty($_GET[$_c]))
+//				{
+//					$this->uri->filter_uri($_GET[$_c]);
+//					$this->set_class($_GET[$_c]);
+//
+//					$_f = trim($this->config->item('function_trigger'));
+//					if ( ! empty($_GET[$_f]))
+//					{
+//						$this->uri->filter_uri($_GET[$_f]);
+//						$this->set_method($_GET[$_f]);
+//					}
+//
+//					$this->uri->rsegments = array(
+//						1 => $this->module,
+//						2 => $this->class,
+//						3 => $this->method
+//					);
+//				}
+//				else
+//				{
+//					//$this->_set_default_controller();
+//				}
+//
+//				// Routing rules don't apply to query strings and we don't need to detect
+//				// directories, so we're done here
+//				return;
+//			}
+
+			$routes = array();
+
+			foreach($modules as $module)
 			{
-				$_d = $this->config->item('directory_trigger');
-				$_d = isset($_GET[$_d]) ? trim($_GET[$_d], " \t\n\r\0\x0B/") : '';
-				if ($_d !== '')
+				if($module->getRoute() == null )
 				{
-					$this->uri->filter_uri($_d);
-					$this->set_directory($_d);
-				}
-
-				$_c = trim($this->config->item('controller_trigger'));
-				if ( ! empty($_GET[$_c]))
-				{
-					$this->uri->filter_uri($_GET[$_c]);
-					$this->set_class($_GET[$_c]);
-
-					$_f = trim($this->config->item('function_trigger'));
-					if ( ! empty($_GET[$_f]))
-					{
-						$this->uri->filter_uri($_GET[$_f]);
-						$this->set_method($_GET[$_f]);
-					}
-
-					$this->uri->rsegments = array(
-						1 => $this->class,
-						2 => $this->method
-					);
+					$routes = array_merge($routes,$module->getInternalRoute());
 				}
 				else
 				{
-					$this->_set_default_controller();
+					foreach($module->getInternalRoute() as $route => $rawRoute)
+					{
+						$routes[$module->getRoute().'/'.$route] = $rawRoute;
+					}
 				}
 
-				// Routing rules don't apply to query strings and we don't need to detect
-				// directories, so we're done here
-				return;
 			}
 
-			// Load the routes.php file.
-			if (file_exists(APPPATH.'config/routes.php'))
-			{
-				include(APPPATH.'config/routes.php');
-			}
-
-			if (file_exists(APPPATH.'config/'.ENVIRONMENT.'/routes.php'))
-			{
-				include(APPPATH.'config/'.ENVIRONMENT.'/routes.php');
-			}
-
-			// Validate & get reserved routes
-			if (isset($route) && is_array($route))
-			{
-				isset($route['default_controller']) && $this->default_controller = $route['default_controller'];
-				isset($route['translate_uri_dashes']) && $this->translate_uri_dashes = $route['translate_uri_dashes'];
-				unset($route['default_controller'], $route['translate_uri_dashes']);
-				$this->routes = $route;
-			}
+			$this->routes = $routes;
 
 			// Is there anything to parse?
 			if ($this->uri->uri_string !== '')
@@ -195,7 +195,9 @@ namespace System\Core
 			}
 			else
 			{
-				$this->_set_default_controller();
+				//TOOD URL Vazia
+				die('url vazia');
+				//$this->_set_default_controller();
 			}
 		}
 
@@ -213,78 +215,43 @@ namespace System\Core
 		 */
 		protected function _set_request($segments = array())
 		{
-			$segments = $this->_validate_request($segments);
+
+			//$segments = $this->_validate_request($segments);
 			// If we don't have any segments left - try the default controller;
 			// WARNING: Directories get shifted out of the segments array!
-			if (empty($segments))
-			{
-				$this->_set_default_controller();
-				return;
-			}
+			//TODO
+//			if (empty($segments))
+//			{
+//				$this->_set_default_controller();
+//				return;
+//			}
+//TODO
+//			if ($this->translate_uri_dashes === TRUE)
+//			{
+//				$segments[0] = str_replace('-', '_', $segments[0]);
+//				if (isset($segments[1]))
+//				{
+//					$segments[1] = str_replace('-', '_', $segments[1]);
+//				}
+//			}
 
-			if ($this->translate_uri_dashes === TRUE)
+			$this->set_vendor($segments[0]);
+			$this->set_module($segments[1]);
+			$this->set_class($segments[2]);
+			if (isset($segments[3]))
 			{
-				$segments[0] = str_replace('-', '_', $segments[0]);
-				if (isset($segments[1]))
-				{
-					$segments[1] = str_replace('-', '_', $segments[1]);
-				}
-			}
-
-			$this->set_class($segments[0]);
-			if (isset($segments[1]))
-			{
-				$this->set_method($segments[1]);
+				$this->set_method($segments[3]);
 			}
 			else
 			{
-				$segments[1] = 'index';
+				$segments[3] = 'index';
 			}
 
 			array_unshift($segments, NULL);
-			unset($segments[0]);
+			//unset($segments[0]);
 			$this->uri->rsegments = $segments;
 		}
 
-		// --------------------------------------------------------------------
-
-		/**
-		 * Set default controller
-		 *
-		 * @return	void
-		 */
-		protected function _set_default_controller()
-		{
-			if (empty($this->default_controller))
-			{
-				show_error('Unable to determine what should be displayed. A default route has not been specified in the routing file.');
-			}
-
-			// Is the method being specified?
-			if (sscanf($this->default_controller, '%[^/]/%s', $class, $method) !== 2)
-			{
-				$method = 'index';
-			}
-
-			if ( ! file_exists(APPPATH.'controllers/'.$this->directory.ucfirst($class).'.php'))
-			{
-				// This will trigger 404 later
-				return;
-			}
-
-			$this->set_class($class);
-			$this->set_method($method);
-
-			// Assign routed segments, index starting from 1
-			$this->uri->rsegments = array(
-				1 => $class,
-				2 => $method
-			);
-
-			log_message('debug', 'No URI present. Default controller set.');
-		}
-
-		// --------------------------------------------------------------------
 
 		/**
 		 * Validate request
@@ -395,6 +362,7 @@ namespace System\Core
 				}
 			}
 
+			//TODO
 			// If we got this far it means we didn't encounter a
 			// matching route so we'll set the site default route
 			$this->_set_request(array_values($this->uri->segments));
@@ -412,6 +380,8 @@ namespace System\Core
 		{
 			$this->class = str_replace(array('/', '.'), '', $class);
 		}
+
+
 
 		// --------------------------------------------------------------------
 
@@ -487,6 +457,28 @@ namespace System\Core
 		public function fetch_directory()
 		{
 			return $this->directory;
+		}
+
+		/**
+		 * Set class vendor
+		 *
+		 * @param	string	$class	Class name
+		 * @return	void
+		 */
+		public function set_vendor($vendor)
+		{
+			$this->vendor = str_replace(array('/', '.'), '', $vendor);
+		}
+
+		/**
+		 * Set class name
+		 *
+		 * @param	string	$class	Class name
+		 * @return	void
+		 */
+		public function set_module($module)
+		{
+			$this->module = str_replace(array('/', '.'), '', $module);
 		}
 
 	}

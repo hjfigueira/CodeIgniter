@@ -11,6 +11,10 @@ namespace System\Core\Interfaces;
 
 interface StandardModule {
 
+    public function getName();
 
+    public function getRoute();
+
+    public function getInternalRoute();
 
 }

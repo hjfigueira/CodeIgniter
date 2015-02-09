@@ -238,9 +238,10 @@ namespace System\Core
 				$exit_status = 1; // EXIT_ERROR
 			}
 
-			$_error =& load_class('Exceptions', 'core');
-			echo $_error->show_error($heading, $message, 'error_general', $status_code);
-			exit($exit_status);
+			//TODO
+			$_error = new Exceptions();
+			//echo $_error->show_error($heading, $message, 'error_general', $status_code);
+			//exit($exit_status);
 		}
 
 		/**

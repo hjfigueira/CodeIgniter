@@ -195,46 +195,36 @@ namespace System\Core
              *  Instantiate the routing class and set the routing
              * ------------------------------------------------------
              */
-			$RTR = new Router();
+			$RTR = new Router($modules);
 
-			die('Carregamento bem sucedido em '.__CLASS__.'.php - line : '.__LINE__);
 			/*
              * ------------------------------------------------------
              *  Instantiate the output class
              * ------------------------------------------------------
              */
-			$OUT =& load_class('Output', 'core');
+			$OUT = new Output();
 
-			/*
-             * ------------------------------------------------------
-             *	Is there a valid cache file? If so, we're done...
-             * ------------------------------------------------------
-             */
-			if ($EXT->call_hook('cache_override') === FALSE && $OUT->_display_cache($CFG, $URI) === TRUE)
-			{
-				exit;
-			}
 
 			/*
              * -----------------------------------------------------
              * Load the security class for xss and csrf support
              * -----------------------------------------------------
              */
-			$SEC =& load_class('Security', 'core');
+			$SEC = new Security();
 
 			/*
              * ------------------------------------------------------
              *  Load the Input class and sanitize globals
              * ------------------------------------------------------
              */
-			$IN	=& load_class('Input', 'core');
+			$IN	= new Input();
 
 			/*
              * ------------------------------------------------------
              *  Load the Language class
              * ------------------------------------------------------
              */
-			$LANG =& load_class('Lang', 'core');
+			$LANG = new Lang();
 
 			/*
              * ------------------------------------------------------
@@ -242,25 +232,8 @@ namespace System\Core
              * ------------------------------------------------------
              *
              */
-			// Load the base controller class
-			require_once BASEPATH.'core/Controller.php';
+			//die('Carregamento bem sucedido em '.__CLASS__.'.php - line : '.__LINE__);
 
-			/**
-			 * Reference to the CI_Controller method.
-			 *
-			 * Returns current CI instance object
-			 *
-			 * @return object
-			 */
-			function &get_instance()
-			{
-				return CI_Controller::get_instance();
-			}
-
-			if (file_exists(APPPATH.'core/'.$CFG->config['subclass_prefix'].'Controller.php'))
-			{
-				require_once APPPATH.'core/'.$CFG->config['subclass_prefix'].'Controller.php';
-			}
 
 			// Set a mark point for benchmarking
 			$BM->mark('loading_time:_base_classes_end');
@@ -287,90 +260,92 @@ namespace System\Core
              */
 
 			$e404 = FALSE;
-			$class = ucfirst($RTR->class);
+			$class = $RTR->class;
 			$method = $RTR->method;
 
-			if (empty($class) OR ! file_exists(APPPATH.'controllers/'.$RTR->directory.$class.'.php'))
+			if(false)
 			{
-				$e404 = TRUE;
-			}
-			else
-			{
-				require_once(APPPATH.'controllers/'.$RTR->directory.$class.'.php');
-
-				if ( ! class_exists($class, FALSE) OR $method[0] === '_' OR method_exists('CI_Controller', $method))
+				if (empty($class) OR ! file_exists(APPPATH.'controllers/'.$RTR->directory.$class.'.php'))
 				{
 					$e404 = TRUE;
-				}
-				elseif (method_exists($class, '_remap'))
-				{
-					$params = array($method, array_slice($URI->rsegments, 2));
-					$method = '_remap';
-				}
-				// WARNING: It appears that there are issues with is_callable() even in PHP 5.2!
-				// Furthermore, there are bug reports and feature/change requests related to it
-				// that make it unreliable to use in this context. Please, DO NOT change this
-				// work-around until a better alternative is available.
-				elseif ( ! in_array(strtolower($method), array_map('strtolower', get_class_methods($class)), TRUE))
-				{
-					$e404 = TRUE;
-				}
-			}
-
-			if ($e404)
-			{
-				if ( ! empty($RTR->routes['404_override']))
-				{
-					if (sscanf($RTR->routes['404_override'], '%[^/]/%s', $error_class, $error_method) !== 2)
-					{
-						$error_method = 'index';
-					}
-
-					$error_class = ucfirst($error_class);
-
-					if ( ! class_exists($error_class, FALSE))
-					{
-						if (file_exists(APPPATH.'controllers/'.$RTR->directory.$error_class.'.php'))
-						{
-							require_once(APPPATH.'controllers/'.$RTR->directory.$error_class.'.php');
-							$e404 = ! class_exists($error_class, FALSE);
-						}
-						// Were we in a directory? If so, check for a global override
-						elseif ( ! empty($RTR->directory) && file_exists(APPPATH.'controllers/'.$error_class.'.php'))
-						{
-							require_once(APPPATH.'controllers/'.$error_class.'.php');
-							if (($e404 = ! class_exists($error_class, FALSE)) === FALSE)
-							{
-								$RTR->directory = '';
-							}
-						}
-					}
-					else
-					{
-						$e404 = FALSE;
-					}
-				}
-
-				// Did we reset the $e404 flag? If so, set the rsegments, starting from index 1
-				if ( ! $e404)
-				{
-					$class = $error_class;
-					$method = $error_method;
-
-					$URI->rsegments = array(
-						1 => $class,
-						2 => $method
-					);
 				}
 				else
 				{
-					show_404($RTR->directory.$class.'/'.$method);
-				}
-			}
 
-			if ($method !== '_remap')
-			{
-				$params = array_slice($URI->rsegments, 2);
+					if ( ! class_exists($class, FALSE) OR $method[0] === '_' OR method_exists('CI_Controller', $method))
+					{
+						$e404 = TRUE;
+					}
+					elseif (method_exists($class, '_remap'))
+					{
+						$params = array($method, array_slice($URI->rsegments, 2));
+						$method = '_remap';
+					}
+					// WARNING: It appears that there are issues with is_callable() even in PHP 5.2!
+					// Furthermore, there are bug reports and feature/change requests related to it
+					// that make it unreliable to use in this context. Please, DO NOT change this
+					// work-around until a better alternative is available.
+					elseif ( ! in_array(strtolower($method), array_map('strtolower', get_class_methods($class)), TRUE))
+					{
+						$e404 = TRUE;
+					}
+				}
+
+				if ($e404)
+				{
+					if ( ! empty($RTR->routes['404_override']))
+					{
+						if (sscanf($RTR->routes['404_override'], '%[^/]/%s', $error_class, $error_method) !== 2)
+						{
+							$error_method = 'index';
+						}
+
+						$error_class = ucfirst($error_class);
+
+						if ( ! class_exists($error_class, FALSE))
+						{
+							if (file_exists(APPPATH.'controllers/'.$RTR->directory.$error_class.'.php'))
+							{
+								require_once(APPPATH.'controllers/'.$RTR->directory.$error_class.'.php');
+								$e404 = ! class_exists($error_class, FALSE);
+							}
+							// Were we in a directory? If so, check for a global override
+							elseif ( ! empty($RTR->directory) && file_exists(APPPATH.'controllers/'.$error_class.'.php'))
+							{
+								require_once(APPPATH.'controllers/'.$error_class.'.php');
+								if (($e404 = ! class_exists($error_class, FALSE)) === FALSE)
+								{
+									$RTR->directory = '';
+								}
+							}
+						}
+						else
+						{
+							$e404 = FALSE;
+						}
+					}
+
+					// Did we reset the $e404 flag? If so, set the rsegments, starting from index 1
+					if ( ! $e404)
+					{
+						$class = $error_class;
+						$method = $error_method;
+
+						$URI->rsegments = array(
+							1 => $class,
+							2 => $method
+						);
+					}
+					else
+					{
+						Common::show_404($RTR->directory.$class.'/'.$method);
+					}
+				}
+
+				if ($method !== '_remap')
+				{
+					$params = array_slice($URI->rsegments, 2);
+				}
 			}
 
 			/*
@@ -378,7 +353,7 @@ namespace System\Core
              *  Is there a "pre_controller" hook?
              * ------------------------------------------------------
              */
-			$EXT->call_hook('pre_controller');
+			//$EXT->call_hook('pre_controller');
 
 			/*
              * ------------------------------------------------------
@@ -388,21 +363,26 @@ namespace System\Core
 			// Mark a start point so we can benchmark the controller
 			$BM->mark('controller_execution_time_( '.$class.' / '.$method.' )_start');
 
-			$CI = new $class();
+			$pathToController = 'App\\'.$RTR->vendor.'\\'.$RTR->module.'\\Controllers\\'.$class;
+			$CI = new $pathToController();
 
 			/*
              * ------------------------------------------------------
              *  Is there a "post_controller_constructor" hook?
              * ------------------------------------------------------
              */
-			$EXT->call_hook('post_controller_constructor');
+			//$EXT->call_hook('post_controller_constructor');
 
 			/*
              * ------------------------------------------------------
              *  Call the requested method
              * ------------------------------------------------------
              */
-			call_user_func_array(array(&$CI, $method), $params);
+
+			$CI->$method();
+			//call_user_func_array(array($pathToController, $method), $params);
+
+
 
 			// Mark a benchmark end point
 			$BM->mark('controller_execution_time_( '.$class.' / '.$method.' )_end');
@@ -412,24 +392,24 @@ namespace System\Core
              *  Is there a "post_controller" hook?
              * ------------------------------------------------------
              */
-			$EXT->call_hook('post_controller');
+			//$EXT->call_hook('post_controller');
 
 			/*
              * ------------------------------------------------------
              *  Send the final rendered output to the browser
              * ------------------------------------------------------
              */
-			if ($EXT->call_hook('display_override') === FALSE)
-			{
-				$OUT->_display();
-			}
+//			if ($EXT->call_hook('display_override') === FALSE)
+//			{
+//				$OUT->_display();
+//			}
 
 			/*
              * ------------------------------------------------------
              *  Is there a "post_system" hook?
              * ------------------------------------------------------
              */
-			$EXT->call_hook('post_system');
+			//$EXT->call_hook('post_system');
 		}
 	}
 
